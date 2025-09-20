@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Undangan - Tab 2</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    fieldset {
+      border: none;
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    legend {
+      font-weight: bold;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    legend.acara1 { background: #28a745; } /* hijau */
+    legend.acara2 { background: #28a745; } 
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .error {
+      color: red;
+      font-size: 12px;
+      margin-top: 3px;
+      display: none;
+    }
+    .btn-next {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: #0059ff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-next:hover {
+      background: #0056b3;
+    }
+  </style>
+  <script type="module">
+   import { checkToken, updateCurrentTab, saveTabData } from "./js/firebase.js";
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    // Cek token
+    (async () => {
+      if (!token) {
+        alert("Token tidak ditemukan di link!");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const result = await checkToken(token);
+      if (!result.valid) {
+        alert(result.reason);
+        document.body.innerHTML = "<h2>Token tidak valid atau sudah dipakai!</h2>";
+        return;
+      }
+
+      // Kalau sudah sampai tab3, tidak boleh kembali
+      if (result.data.currentTab >= 3) {
+        alert("Anda sudah melanjutkan ke Tab 3, tidak bisa kembali ke Tab 2. Jika ada kesalahan, kamu bisa mengubahnya nanti😁");
+        window.location.href = `tab3.html?token=${token}`;
+        return;
+      }
+
+      console.log("Token valid:", result.data);
+    })();
+
+    // Validasi acara 1 wajib
+    function validateForm() {
+      let valid = true;
+      const acara1Inputs = document.querySelectorAll(".acara1-input");
+      acara1Inputs.forEach(inp => {
+        const errorEl = inp.nextElementSibling;
+        if (!inp.value.trim()) {
+          errorEl.style.display = "block";
+          valid = false;
+        } else {
+          errorEl.style.display = "none";
+        }
+      });
+      return valid;
+    }
+
+    // Klik Next
+async function goNext() {
+  if (!validateForm()) return;
+
+  try {
+    // Kumpulkan data form tab2
+    function getFormData() {
+      const data = {};
+
+      // ambil input acara1 (wajib)
+      const acara1Inputs = document.querySelectorAll(".acara1-input");
+      acara1Inputs.forEach((inp, idx) => {
+        data[`acara1_field${idx+1}`] = inp.value.trim();
+      });
+
+      // ambil input acara2 (opsional)
+      const acara2Inputs = document.querySelectorAll("fieldset:nth-of-type(2) input");
+      acara2Inputs.forEach((inp, idx) => {
+        data[`acara2_field${idx+1}`] = inp.value.trim();
+      });
+
+      return data;
+    }
+
+    // ✅ Panggil di sini
+    const formData = getFormData();
+
+    // Simpan data tab2
+    await saveTabData(token, "tab2", formData);
+
+    // Update currentTab ke 3 (tanpa overwrite object)
+    await updateCurrentTab(token, 3);
+
+    // Lanjut ke Tab3
+    window.location.href = `tab3.html?token=${token}`;
+  } catch (err) {
+    console.error(err);
+    alert("Terjadi kesalahan saat menyimpan data. Coba lagi.");
+  }
+}
+
+    window.goNext = goNext;
+  </script>
+</head>
+<body>
+  <h2>Detail Acara</h2>
+
+  <!-- Detail Acara 1 (wajib) -->
+  <fieldset>
+    <legend class="acara1">Detail Acara 1</legend>
+    <label>Nama Acara</label>
+    <input type="text" class="acara1-input">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Tanggal Acara</label>
+    <input type="date" class="acara1-input">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Jam</label>
+    <input type="text" class="acara1-input" placeholder="Contoh: 10.00 - Selesai">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Lokasi / Venue</label>
+    <input type="text" class="acara1-input">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Alamat Venue</label>
+    <input type="text" class="acara1-input">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Link Gmap</label>
+    <input type="text" class="acara1-input">
+    <div class="error">*harus diisi terlebih dahulu</div>
+  </fieldset>
+
+  <!-- Detail Acara 2 (opsional) -->
+  <fieldset>
+    <legend class="acara2">Detail Acara 2 (opsional)</legend>
+    <label>Nama Acara</label>
+    <input type="text">
+
+    <label>Tanggal Acara</label>
+    <input type="date">
+
+    <label>Jam</label>
+    <input type="text" placeholder="Contoh: 10.00 - Selesai">
+
+    <label>Lokasi / Venue</label>
+    <input type="text">
+
+    <label>Alamat Venue</label>
+    <input type="text">
+
+    <label>Link Gmap</label>
+    <input type="text">
+  </fieldset>
+
+  <button class="btn-next" onclick="goNext()">Selanjutnya</button>
+</body>
+</html>

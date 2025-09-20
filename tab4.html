@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Undangan - Tab 4</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f7f8; margin: 0; padding: 20px; }
+    h2 { text-align: center; margin-bottom: 25px; font-size: 24px; }
+    .form-section { background: #fff; padding: 20px; margin-bottom: 25px; border-radius: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+    .form-section h3 { margin-top: 0; margin-bottom: 15px; font-size: 18px; color: #333; }
+    .upload-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .photo-preview { position: relative; width: 140px; height: 140px; border: 2px dashed #bbb; border-radius: 8px; overflow: hidden; background: #fafafa; display: flex; justify-content: center; align-items: center; font-size: 13px; color: #777; }
+    .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-preview button { position: absolute; top: 5px; right: 5px; border: none; background: rgba(220,53,69,0.9); color: #fff; font-size: 14px; padding: 5px 8px; border-radius: 5px; cursor: pointer; }
+    .note { font-size: 13px; color: #666; margin-top: 5px; }
+    .btn-next { display: block; margin: 30px auto 10px; padding: 14px 28px; font-size: 18px; font-weight: bold; background: #007bff; color: #fff; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+    .btn-next:hover { background: #0056b3; }
+  </style>
+<script type="module">
+  import { checkToken, updateCurrentTab, saveTabData, uploadToCloudinary, db } from "./js/firebase.js";
+  import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  let uploadedPhotos = [];
+
+  // --- Cek token ---
+  (async () => {
+    if (!token) {
+      alert("Token tidak ditemukan di link!");
+      window.location.href = "index.html";
+      return;
+    }
+    const result = await checkToken(token);
+    if (!result.valid) {
+      alert(result.reason);
+      document.body.innerHTML = "<h2>Token tidak valid atau sudah dipakai!</h2>";
+      return;
+    }
+    if (result.data.currentTab >= 5) {
+      alert("Anda sudah melanjutkan ke Tab 5, tidak bisa kembali ke Tab 4.");
+      window.location.href = `tab5.html?token=${token}`;
+      return;
+    }
+    console.log("Token valid:", result.data);
+    await loadUploadedPhotos(); // muat foto lama
+  })();
+
+  // --- Load foto lama dari Firestore ---
+  async function loadUploadedPhotos() {
+    const ref = doc(db, "tokens", token);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || !snap.data().tab4) return;
+
+    const data = snap.data().tab4;
+    for (const [containerId, value] of Object.entries(data)) {
+      const container = document.getElementById(containerId);
+      const photos = Array.isArray(value) ? value : [value];
+      photos.forEach(photo => {
+        if (!photo.url) return;
+        const div = document.createElement("div");
+        div.className = "photo-preview";
+        div.innerHTML = `
+          <img src="${photo.url}" alt="preview">
+          <button onclick="deletePhoto('${containerId}','${photo.publicId}',this)">✖</button>
+        `;
+        container.appendChild(div);
+        uploadedPhotos.push(photo);
+      });
+    }
+  }
+
+  // --- Handle Upload + Preview ---
+  async function handleUpload(input, containerId, max) {
+    const container = document.getElementById(containerId);
+    const files = Array.from(input.files);
+
+    if (container.children.length + files.length > max) {
+      alert("Maksimal upload " + max + " foto.");
+      return;
+    }
+
+    for (const file of files) {
+      const reader = new FileReader();
+reader.onload = e => {
+  const div = document.createElement("div");
+  div.className = "photo-preview";
+  div.innerHTML = `
+    <img src="${e.target.result}" alt="preview">
+    <button onclick="deletePhoto('${containerId}','temp-${Date.now()}',this)">✖</button>
+  `;
+  container.appendChild(div);
+};
+reader.readAsDataURL(file);
+
+
+      try {
+        const { url, publicId } = await uploadToCloudinary(file);
+  console.log("✅ Upload sukses:", url);
+
+  // === Update tombol delete di preview terakhir ===
+  const lastDiv = container.lastElementChild;
+  if (lastDiv) {
+    const btn = lastDiv.querySelector("button");
+    if (btn) {
+      btn.setAttribute("onclick", `deletePhoto('${containerId}','${publicId}',this)`);
+    }
+  }
+
+  // Simpan ke Firestore (url + publicId)
+  // === Simpan ke Firestore (append array kalau multi) ===
+const ref = doc(db, "tokens", token);
+const snap = await getDoc(ref);
+
+let existing = {};
+if (snap.exists() && snap.data().tab4 && snap.data().tab4[containerId]) {
+  existing = snap.data().tab4[containerId];
+}
+
+let newValue;
+if (Array.isArray(existing)) {
+  newValue = [...existing, { url, publicId }];
+} else if (Object.keys(existing).length > 0) {
+  // kalau sebelumnya single object → jadikan array
+  newValue = [existing, { url, publicId }];
+} else {
+  // kosong, langsung isi object
+  newValue = { url, publicId };
+}
+
+await updateDoc(ref, {
+  [`tab4.${containerId}`]: newValue
+});
+
+
+  // simpan ke array supaya tau ada foto
+  uploadedPhotos.push({ url, publicId });
+} catch (err) {
+        console.error("❌ Upload gagal:", err);
+      }
+    }
+    input.value = "";
+  }
+  window.handleUpload = handleUpload;
+
+  // --- Hapus foto ---
+  async function deletePhoto(containerId, publicId, btn) {
+    if (!confirm("Yakin ingin menghapus foto ini?")) return;
+    try {
+      const ref = doc(db, "tokens", token);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data().tab4) {
+        let current = snap.data().tab4[containerId];
+        if (Array.isArray(current)) {
+          current = current.filter(p => p.publicId !== publicId);
+        } else {
+          current = {};
+        }
+        await updateDoc(ref, { [`tab4.${containerId}`]: current });
+      }
+      btn.parentElement.remove();
+      uploadedPhotos = uploadedPhotos.filter(p => p.publicId !== publicId);
+      console.log("✅ Foto dihapus:", publicId);
+    } catch (err) {
+      console.error("❌ Gagal hapus foto:", err);
+      alert("Gagal menghapus foto, coba lagi.");
+    }
+  }
+  window.deletePhoto = deletePhoto;
+
+  // --- Next ---
+  async function goNext() {
+    if (uploadedPhotos.length === 0) {
+      alert("Harap upload minimal 1 foto sebelum melanjutkan!");
+      return;
+    }
+    await updateCurrentTab(token, 5, "used");
+    window.location.href = `tab5.html?token=${token}`;
+  }
+  window.goNext = goNext;
+</script>
+</head>
+<body>
+  <h2>Upload Foto Undangan</h2>
+
+  <div class="form-section">
+    <h3>Foto Link (max 1)</h3>
+    <div class="upload-container" id="fotoLink"></div>
+    <input type="file" accept="image/*" onchange="handleUpload(this,'fotoLink',1)">
+  </div>
+
+  <div class="form-section">
+    <h3>Foto Mempelai Pria (max 1)</h3>
+    <div class="upload-container" id="fotoPria"></div>
+    <input type="file" accept="image/*" onchange="handleUpload(this,'fotoPria',1)">
+  </div>
+
+  <div class="form-section">
+    <h3>Foto Mempelai Wanita (max 1)</h3>
+    <div class="upload-container" id="fotoWanita"></div>
+    <input type="file" accept="image/*" onchange="handleUpload(this,'fotoWanita',1)">
+  </div>
+
+  <div class="form-section">
+    <h3>Foto Galeri (max 7)</h3>
+    <div class="upload-container" id="fotoGaleri"></div>
+    <input type="file" accept="image/*" multiple onchange="handleUpload(this,'fotoGaleri',7)">
+  </div>
+
+  <div class="form-section">
+    <h3>Cover (max 1)</h3>
+    <div class="upload-container" id="cover"></div>
+    <input type="file" accept="image/*" onchange="handleUpload(this,'cover',1)">
+  </div>
+
+  <div class="form-section">
+    <h3>Slideshow (max 2)</h3>
+    <div class="upload-container" id="slideshow"></div>
+    <input type="file" accept="image/*" multiple onchange="handleUpload(this,'slideshow',2)">
+  </div>
+
+  <div class="form-section">
+    <h3>Lovestory (max 1)</h3>
+    <div class="upload-container" id="lovestory"></div>
+    <input type="file" accept="image/*" onchange="handleUpload(this,'lovestory',1)">
+  </div>
+
+  <button class="btn-next" onclick="goNext()">➡ Selanjutnya</button>
+</body>
+</html>

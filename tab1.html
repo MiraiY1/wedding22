@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Undangan - Tab 1</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    fieldset {
+      border: none;
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    legend {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+      display: block;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .error {
+      color: red;
+      font-size: 12px;
+      margin-top: 3px;
+      display: none;
+    }
+    .btn-next {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-next:hover {
+      background: #0056b3;
+    }
+  </style>
+  <script type="module">
+  import { checkToken, updateCurrentTab, saveTabData } from "./js/firebase.js";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+
+  // === Cek token saat load ===
+  (async () => {
+    if (!token) {
+      alert("Token tidak ditemukan di link!");
+      window.location.href = "index.html";
+      return;
+    }
+
+    const result = await checkToken(token);
+    if (!result.valid) {
+      alert(result.reason);
+      document.body.innerHTML = "<h2>Token tidak valid atau sudah dipakai!</h2>";
+      return;
+    }
+
+    if (result.data.currentTab >= 2) {
+      alert("Anda sudah melanjutkan ke Tab 2, tidak bisa kembali ke Tab 1. Jika ada kesalahan, kamu bisa mengubahnya nanti😁");
+      window.location.href = `tab2.html?token=${token}`;
+      return;
+    }
+
+    console.log("Token valid:", result.data);
+  })();
+
+  // === Validasi form ===
+  function validateForm() {
+    let valid = true;
+    const inputs = document.querySelectorAll("input, select");
+
+    inputs.forEach(inp => {
+      const errorEl = inp.nextElementSibling;
+      if (!inp.value.trim()) {
+        errorEl.style.display = "block";
+        valid = false;
+      } else {
+        errorEl.style.display = "none";
+      }
+    });
+
+    return valid;
+  }
+
+  // === Kumpulkan data form ===
+  function getFormData() {
+    const inputs = document.querySelectorAll("input, select");
+    const data = {};
+    inputs.forEach((inp, idx) => {
+      data[`field${idx+1}`] = inp.value.trim();
+    });
+    return data;
+  }
+
+  // === Next Button ===
+  async function goNext() {
+    if (!validateForm()) return;
+
+    try {
+      const formData = getFormData();
+
+      // 1. Simpan data tab1 → langsung ke field tab1
+      await saveTabData(token, "tab1", formData);
+
+      // 2. Update currentTab → tanpa nyimpen object tambahan
+      await updateCurrentTab(token, 2);
+
+      // 3. Redirect ke Tab2
+      window.location.href = `tab2.html?token=${token}`;
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat menyimpan data. Coba lagi.");
+    }
+  }
+
+  window.goNext = goNext;
+</script>
+
+</head>
+<body>
+  <h2>Data Pernikahan</h2>
+
+  <!-- Informasi pasangan -->
+  <fieldset>
+    <legend>Pernikahan Untuk Pasangan</legend>
+    <label>Nama Pasangan</label>
+    <input type="text" placeholder="Contoh: Dilan & Milea">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Posisi Mempelai</label>
+    <select>
+      <option value="">-- Pilih --</option>
+      <option value="wanita">Dahulukan Wanita</option>
+      <option value="pria">Dahulukan Pria</option>
+    </select>
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Tanggal Acara</label>
+    <input type="date">
+    <div class="error">*harus diisi terlebih dahulu</div>
+  </fieldset>
+
+  <!-- Detail mempelai pria -->
+  <fieldset>
+    <legend>Detail Mempelai Pria</legend>
+    <label>Nama Lengkap</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Nama Panggilan</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Tanggal Lahir / Kota</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Anak ke- / Putra</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Nama Orang Tua</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+  </fieldset>
+
+  <!-- Detail mempelai wanita -->
+  <fieldset>
+    <legend>Detail Mempelai Wanita</legend>
+    <label>Nama Lengkap</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Nama Panggilan</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Tanggal Lahir / Kota</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Anak ke- / Putri</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+
+    <label>Nama Orang Tua</label>
+    <input type="text">
+    <div class="error">*harus diisi terlebih dahulu</div>
+  </fieldset>
+
+  <button class="btn-next" onclick="goNext()">Next</button>
+</body>
+</html>
