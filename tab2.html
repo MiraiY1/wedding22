@@ -3,72 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <title>Form Undangan - Tab 2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f7f8;
+      font-family: 'Poppins', sans-serif;
+      background: #f9fafc;
       margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
       padding: 20px;
     }
     h2 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      font-weight: 600;
+      font-size: 1.8rem;
+      color: #2c3e50;
     }
     fieldset {
       border: none;
       background: #fff;
       padding: 20px;
       margin-bottom: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
     legend {
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 1.1rem;
       color: #fff;
-      padding: 8px 12px;
-      border-radius: 5px;
+      background: #007bff;
+      padding: 8px 14px;
+      border-radius: 8px;
       margin-bottom: 15px;
+      display: inline-block;
     }
-    legend.acara1 { background: #28a745; } /* hijau */
-    legend.acara2 { background: #28a745; } 
     label {
       display: block;
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 14px;
-      color: #555;
+      font-weight: 500;
+      color: #444;
     }
     input {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
+      padding: 12px;
+      margin-top: 6px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 8px;
       font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    input:focus {
+      border-color: #007bff;
+      outline: none;
     }
     .error {
-      color: red;
+      color: #e74c3c;
       font-size: 12px;
-      margin-top: 3px;
+      margin-top: 4px;
       display: none;
     }
     .btn-next {
       display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
+      width: 100%;
+      margin: 25px auto 10px;
+      padding: 14px;
       font-size: 16px;
+      font-weight: 600;
       color: #fff;
-      background: #0059ff;
+      background: #007bff;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
     .btn-next:hover {
       background: #0056b3;
     }
+
+    /* Responsive untuk HP */
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+      h2 {
+        font-size: 1.5rem;
+      }
+      input {
+        font-size: 15px;
+        padding: 14px;
+      }
+      .btn-next {
+        font-size: 15px;
+        padding: 16px;
+      }
+    }
   </style>
   <script type="module">
    import { checkToken, updateCurrentTab, saveTabData } from "./js/firebase.js";
-
 
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
@@ -115,102 +153,103 @@
     }
 
     // Klik Next
-async function goNext() {
-  if (!validateForm()) return;
+    async function goNext() {
+      if (!validateForm()) return;
 
-  try {
-    // Kumpulkan data form tab2
-    function getFormData() {
-      const data = {};
+      try {
+        // Kumpulkan data form tab2
+        function getFormData() {
+          const data = {};
 
-      // ambil input acara1 (wajib)
-      const acara1Inputs = document.querySelectorAll(".acara1-input");
-      acara1Inputs.forEach((inp, idx) => {
-        data[`acara1_field${idx+1}`] = inp.value.trim();
-      });
+          // ambil input acara1 (wajib)
+          const acara1Inputs = document.querySelectorAll(".acara1-input");
+          acara1Inputs.forEach((inp, idx) => {
+            data[`acara1_field${idx+1}`] = inp.value.trim();
+          });
 
-      // ambil input acara2 (opsional)
-      const acara2Inputs = document.querySelectorAll("fieldset:nth-of-type(2) input");
-      acara2Inputs.forEach((inp, idx) => {
-        data[`acara2_field${idx+1}`] = inp.value.trim();
-      });
+          // ambil input acara2 (opsional)
+          const acara2Inputs = document.querySelectorAll("fieldset:nth-of-type(2) input");
+          acara2Inputs.forEach((inp, idx) => {
+            data[`acara2_field${idx+1}`] = inp.value.trim();
+          });
 
-      return data;
+          return data;
+        }
+
+        const formData = getFormData();
+
+        // Simpan data tab2
+        await saveTabData(token, "tab2", formData);
+
+        // Update currentTab ke 3 (tanpa overwrite object)
+        await updateCurrentTab(token, 3);
+
+        // Lanjut ke Tab3
+        window.location.href = `tab3.html?token=${token}`;
+      } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan saat menyimpan data. Coba lagi.");
+      }
     }
-
-    // ✅ Panggil di sini
-    const formData = getFormData();
-
-    // Simpan data tab2
-    await saveTabData(token, "tab2", formData);
-
-    // Update currentTab ke 3 (tanpa overwrite object)
-    await updateCurrentTab(token, 3);
-
-    // Lanjut ke Tab3
-    window.location.href = `tab3.html?token=${token}`;
-  } catch (err) {
-    console.error(err);
-    alert("Terjadi kesalahan saat menyimpan data. Coba lagi.");
-  }
-}
 
     window.goNext = goNext;
   </script>
 </head>
 <body>
-  <h2>Detail Acara</h2>
+  <div class="container">
+    <h2>Detail Acara</h2>
 
-  <!-- Detail Acara 1 (wajib) -->
-  <fieldset>
-    <legend class="acara1">Detail Acara 1</legend>
-    <label>Nama Acara</label>
-    <input type="text" class="acara1-input">
-    <div class="error">*harus diisi terlebih dahulu</div>
+    <!-- Detail Acara 1 (wajib) -->
+    <fieldset>
+      <legend>Detail Acara 1</legend>
+      <label>Nama Acara</label>
+      <input type="text" class="acara1-input">
+      <div class="error">*harus diisi terlebih dahulu</div>
 
-    <label>Tanggal Acara</label>
-    <input type="date" class="acara1-input">
-    <div class="error">*harus diisi terlebih dahulu</div>
+      <label>Tanggal Acara</label>
+      <input type="date" class="acara1-input">
+      <div class="error">*harus diisi terlebih dahulu</div>
 
-    <label>Jam</label>
-    <input type="text" class="acara1-input" placeholder="Contoh: 10.00 - Selesai">
-    <div class="error">*harus diisi terlebih dahulu</div>
+      <label>Jam</label>
+      <input type="text" class="acara1-input" placeholder="Contoh: 10.00 - Selesai">
+      <div class="error">*harus diisi terlebih dahulu</div>
 
-    <label>Lokasi / Venue</label>
-    <input type="text" class="acara1-input">
-    <div class="error">*harus diisi terlebih dahulu</div>
+      <label>Lokasi / Venue</label>
+      <input type="text" class="acara1-input">
+      <div class="error">*harus diisi terlebih dahulu</div>
 
-    <label>Alamat Venue</label>
-    <input type="text" class="acara1-input">
-    <div class="error">*harus diisi terlebih dahulu</div>
+      <label>Alamat Venue</label>
+      <input type="text" class="acara1-input">
+      <div class="error">*harus diisi terlebih dahulu</div>
 
-    <label>Link Gmap</label>
-    <input type="text" class="acara1-input">
-    <div class="error">*harus diisi terlebih dahulu</div>
-  </fieldset>
+      <label>Link Gmap</label>
+      <input type="text" class="acara1-input">
+      <div class="error">*harus diisi terlebih dahulu</div>
+    </fieldset>
 
-  <!-- Detail Acara 2 (opsional) -->
-  <fieldset>
-    <legend class="acara2">Detail Acara 2 (opsional)</legend>
-    <label>Nama Acara</label>
-    <input type="text">
+    <!-- Detail Acara 2 (opsional) -->
+    <fieldset>
+      <legend>Detail Acara 2 (opsional)</legend>
+      <label>Nama Acara</label>
+      <input type="text">
 
-    <label>Tanggal Acara</label>
-    <input type="date">
+      <label>Tanggal Acara</label>
+      <input type="date">
 
-    <label>Jam</label>
-    <input type="text" placeholder="Contoh: 10.00 - Selesai">
+      <label>Jam</label>
+      <input type="text" placeholder="Contoh: 10.00 - Selesai">
 
-    <label>Lokasi / Venue</label>
-    <input type="text">
+      <label>Lokasi / Venue</label>
+      <input type="text">
 
-    <label>Alamat Venue</label>
-    <input type="text">
+      <label>Alamat Venue</label>
+      <input type="text">
 
-    <label>Link Gmap</label>
-    <input type="text">
-  </fieldset>
+      <label>Link Gmap</label>
+      <input type="text">
+    </fieldset>
 
-  <button class="btn-next" onclick="goNext()">Selanjutnya</button>
+    <button class="btn-next" onclick="goNext()">Selanjutnya</button>
+  </div>
 </body>
 </html>
