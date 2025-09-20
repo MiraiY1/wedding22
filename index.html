@@ -3,20 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <title>Login Token</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Reset dasar */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 25px;
+      font-size: 22px;
+      color: #333;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Optional: pesan error */
+    .error-msg {
+      color: #dc3545;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+  </style>
+
   <script type="module">
     import { checkToken } from "./js/firebase.js";
 
     async function submitToken() {
       const kode = document.getElementById("tokenInput").value.trim();
-      if (!kode) return alert("Masukkan token dulu!");
+      const errorMsg = document.getElementById("errorMsg");
+      errorMsg.textContent = "";
 
-      const result = await checkToken(kode);
+      if (!kode) {
+        errorMsg.textContent = "Masukkan token dulu!";
+        return;
+      }
 
-      if (!result.valid) {
-        alert(result.reason);
-      } else {
-        const nextTab = result.data.currentTab || 1;
-        window.location.href = `tab${nextTab}.html?token=${kode}`;
+      try {
+        const result = await checkToken(kode);
+        if (!result.valid) {
+          errorMsg.textContent = result.reason;
+        } else {
+          const nextTab = result.data.currentTab || 1;
+          window.location.href = `tab${nextTab}.html?token=${kode}`;
+        }
+      } catch (err) {
+        console.error(err);
+        errorMsg.textContent = "Terjadi kesalahan. Coba lagi.";
       }
     }
 
@@ -24,8 +110,11 @@
   </script>
 </head>
 <body>
-  <h2>Masukkan Token Undangan</h2>
-  <input id="tokenInput" type="text" placeholder="Token (document ID)">
-  <button onclick="submitToken()">Submit</button>
+  <div class="container">
+    <h2>Masukkan Token Undangan</h2>
+    <div id="errorMsg" class="error-msg"></div>
+    <input id="tokenInput" type="text" placeholder="Token (document ID)">
+    <button onclick="submitToken()">Submit</button>
+  </div>
 </body>
 </html>
