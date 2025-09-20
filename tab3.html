@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Undangan - Tab 3</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-section {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 80px;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .toggle input {
+      margin-right: 10px;
+      accent-color: purple;
+    }
+    .story {
+      border: 1px dashed #aaa;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      background: #fafafa;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-add {
+      background: #6f42c1;
+      color: #fff;
+    }
+    .btn-add:hover {
+      background: #563d7c;
+    }
+    .btn-del {
+      background: #dc3545;
+      color: #fff;
+      float: right;
+    }
+    .btn-del:hover {
+      background: #a71d2a;
+    }
+    .btn-next {
+      display: block;
+      margin: 20px auto;
+      padding: 12px 25px;
+      font-size: 16px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn-next:hover {
+      background: #0056b3;
+    }
+    .error {
+      color: red;
+      font-size: 12px;
+      display: none;
+      margin-bottom: 5px;
+    }
+  </style>
+  <script type="module">
+    import { checkToken, updateCurrentTab } from "./js/firebase.js";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    (async () => {
+      if (!token) {
+        alert("Token tidak ditemukan di link!");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const result = await checkToken(token);
+      if (!result.valid) {
+        alert(result.reason);
+        document.body.innerHTML = "<h2>Token tidak valid atau sudah dipakai!</h2>";
+        return;
+      }
+
+      if (result.data.currentTab >= 4) {
+        alert("Anda sudah melanjutkan ke Tab 4, tidak bisa kembali ke Tab 3.");
+        window.location.href = `tab4.html?token=${token}`;
+        return;
+      }
+
+      console.log("Token valid:", result.data);
+    })();
+
+    // === Wedding Gift ===
+    function addRekening() {
+      const container = document.getElementById("rekeningList");
+      const div = document.createElement("div");
+      div.className = "story";
+      div.innerHTML = `
+        <label>Nama Bank</label>
+        <input type="text" placeholder="Contoh: BCA">
+        <div class="error">*harus diisi terlebih dahulu</div>
+
+        <label>Nama Pemilik</label>
+        <input type="text" placeholder="Nama sesuai buku rekening">
+        <div class="error">*harus diisi terlebih dahulu</div>
+
+        <label>Nomor Rekening</label>
+        <input type="text" placeholder="1234567890">
+        <div class="error">*harus diisi terlebih dahulu</div>
+
+        <button class="btn btn-del" onclick="this.parentElement.remove()">Hapus</button>
+      `;
+      container.appendChild(div);
+    }
+    window.addRekening = addRekening;
+
+    // === Love Story ===
+    function addStory() {
+      const container = document.getElementById("stories");
+      const div = document.createElement("div");
+      div.className = "story";
+      div.innerHTML = `
+        <label>Tanggal & Judul</label>
+        <input type="text" placeholder="Contoh: 20 Maret 2020 - Awal Bertemu">
+        <div class="error">*harus diisi terlebih dahulu</div>
+
+        <label>Cerita</label>
+        <textarea placeholder="Tulis cerita di sini"></textarea>
+        <div class="error">*harus diisi terlebih dahulu</div>
+      `;
+      container.appendChild(div);
+
+      // setelah ditambah, sembunyikan tombol
+      document.getElementById("btnAddStory").style.display = "none";
+    }
+    window.addStory = addStory;
+
+    // === Checkbox toggle ===
+    function toggleGift(cb) {
+      const section = document.getElementById("giftSection");
+      if (cb.checked) {
+        section.style.display = "block";
+      } else {
+        section.style.display = "none";
+        document.getElementById("rekeningList").innerHTML = "";
+      }
+    }
+    window.toggleGift = toggleGift;
+
+    function toggleStory(cb) {
+      const section = document.getElementById("storySection");
+      if (cb.checked) {
+        section.style.display = "block";
+        document.getElementById("btnAddStory").style.display = "inline-block";
+      } else {
+        section.style.display = "none";
+        document.getElementById("stories").innerHTML = "";
+        document.getElementById("btnAddStory").style.display = "inline-block";
+      }
+    }
+    window.toggleStory = toggleStory;
+
+    // === Validasi ===
+    function validateForm() {
+      let valid = true;
+
+      if (document.getElementById("gift").checked) {
+        const inputs = document.querySelectorAll("#rekeningList input");
+        inputs.forEach(inp => {
+          const errorEl = inp.nextElementSibling;
+          if (!inp.value.trim()) {
+            errorEl.style.display = "block";
+            valid = false;
+          } else {
+            errorEl.style.display = "none";
+          }
+        });
+      }
+
+      if (document.getElementById("loveStory").checked) {
+        const storyInputs = document.querySelectorAll("#stories input, #stories textarea");
+        storyInputs.forEach(inp => {
+          const errorEl = inp.nextElementSibling;
+          if (!inp.value.trim()) {
+            errorEl.style.display = "block";
+            valid = false;
+          } else {
+            errorEl.style.display = "none";
+          }
+        });
+      }
+
+      return valid;
+    }
+
+    // === Next ===
+    async function goNext() {
+      if (!validateForm()) return;
+      await updateCurrentTab(token, 4);
+      window.location.href = `tab4.html?token=${token}`;
+    }
+    window.goNext = goNext;
+  </script>
+</head>
+<body>
+  <h2>Fitur Tambahan</h2>
+
+  <div class="form-section">
+    <label>Musik Backsound</label>
+    <input type="url" placeholder="Link YouTube">
+
+    <div class="toggle">
+      <input type="checkbox" id="rsvp">
+      <label for="rsvp">Aktifkan RSVP (Konfirmasi kehadiran tamu)</label>
+    </div>
+
+    <div class="toggle">
+      <input type="checkbox" id="ucapan">
+      <label for="ucapan">Aktifkan Kolom Ucapan</label>
+    </div>
+
+    <div class="toggle">
+      <input type="checkbox" id="loveStory" onchange="toggleStory(this)">
+      <label for="loveStory">Aktifkan Love Story</label>
+    </div>
+
+    <div id="storySection" style="display:none;">
+      <div id="stories"></div>
+      <button id="btnAddStory" class="btn btn-add" onclick="addStory()">+ Tambah Cerita</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="toggle">
+      <input type="checkbox" id="gift" onchange="toggleGift(this)">
+      <label for="gift">Aktifkan Wedding Gift</label>
+    </div>
+
+    <div id="giftSection" style="display:none;">
+      <div id="rekeningList"></div>
+      <button type="button" class="btn btn-add" onclick="addRekening()">+ Tambah Rekening</button>
+    </div>
+  </div>
+
+  <button class="btn-next" onclick="goNext()">Selanjutnya</button>
+</body>
+</html>

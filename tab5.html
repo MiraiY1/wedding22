@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Form Undangan - Tab 5</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      margin: 0;
+      padding: 20px;
+    }
+    .message-box {
+      max-width: 700px;
+      margin: 100px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .message-box strong {
+      color: #047857;
+    }
+    .message-box p {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #333;
+    }
+  </style>
+  <script type="module">
+    import { getDoc, doc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import { db } from "./js/firebase.js";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    // Fungsi khusus untuk Tab5: abaikan status 'used', cukup cek token ada & currentTab >= 5
+    async function checkTokenForTab5(tokenId) {
+      try {
+        const ref = doc(db, "tokens", tokenId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return { valid: false, reason: "Token tidak ditemukan" };
+        const data = snap.data();
+        if (data.currentTab < 5) return { valid: false, reason: "Anda belum menyelesaikan langkah sebelumnya." };
+        return { valid: true, data };
+      } catch (error) {
+        console.error("Error checkTokenForTab5:", error);
+        return { valid: false, reason: "Terjadi kesalahan saat mengecek token" };
+      }
+    }
+
+    (async () => {
+      if (!token) {
+        alert("Token tidak ditemukan di link!");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const result = await checkTokenForTab5(token);
+
+      if (!result.valid) {
+        alert(result.reason);
+        document.body.innerHTML = `<h2>${result.reason}</h2>`;
+        return;
+      }
+
+      console.log("Token valid, sudah sampai Tab 5:", result.data);
+    })();
+  </script>
+</head>
+<body>
+  <div class="message-box">
+    <p>
+      <strong>Undangan anda sudah di proses,</strong>  
+      Silahkan periksa WhatsApp anda. Jika dalam 1 jam setelah mengisi formulir belum menerima akses undangan harap hubungi admin.
+    </p>
+  </div>
+</body>
+</html>
