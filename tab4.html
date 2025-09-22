@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', sans-serif;
       background: #f4f7f8;
       margin: 0;
       padding: 15px;
@@ -18,25 +18,33 @@
       width: 100%;
       max-width: 600px;
     }
+    
     h2 {
       text-align: center;
       margin-bottom: 20px;
       font-size: 22px;
-      color: #333;
+      color: #333333;
     }
-    .form-section {
+
+    fieldset {
       background: #fff;
       padding: 18px;
       margin-bottom: 20px;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      border: none;
     }
-    .form-section h3 {
-      margin: 0 0 12px;
-      font-size: 16px;
-      color: #444;
-      text-align: center;
+
+    legend {
+      background: #007bff;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
     }
+
     .upload-container {
       display: flex;
       flex-wrap: wrap;
@@ -108,8 +116,8 @@
       h2 {
         font-size: 20px;
       }
-      .form-section h3 {
-        font-size: 15px;
+      legend {
+        font-size: 14px;
       }
     }
   </style>
@@ -134,17 +142,17 @@
         return;
       }
 
-       if (result.data.currentTab < 1) {
-    alert("Silakan isi Tab 1 terlebih dahulu sebelum melanjutkan ke Tab 4.");
-    window.location.href = `tab1.html?token=${token}`;
-    return;
-  }
+      if (result.data.currentTab < 1) {
+        alert("Silakan isi Tab 1 terlebih dahulu sebelum melanjutkan ke Tab 4.");
+        window.location.href = `tab1.html?token=${token}`;
+        return;
+      }
 
       if (result.data.currentTab < 2) {
-    alert("Silakan isi Tab 2 terlebih dahulu sebelum melanjutkan ke Tab 4.");
-    window.location.href = `tab2.html?token=${token}`;
-    return;
-  }
+        alert("Silakan isi Tab 2 terlebih dahulu sebelum melanjutkan ke Tab 4.");
+        window.location.href = `tab2.html?token=${token}`;
+        return;
+      }
 
       if (result.data.currentTab >= 5) {
         alert("Anda sudah melanjutkan ke Tab 5, tidak bisa kembali ke Tab 4.");
@@ -267,47 +275,47 @@
   <div class="container">
     <h2>Upload Foto Undangan</h2>
 
-    <div class="form-section">
-      <h3>Foto Link (max 1)</h3>
+    <fieldset>
+      <legend>Foto Link (max 1)</legend>
       <div class="upload-container" id="fotoLink"></div>
       <input type="file" accept="image/*" onchange="handleUpload(this,'fotoLink',1)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Foto Mempelai Pria (max 1)</h3>
+    <fieldset>
+      <legend>Foto Mempelai Pria (max 1)</legend>
       <div class="upload-container" id="fotoPria"></div>
       <input type="file" accept="image/*" onchange="handleUpload(this,'fotoPria',1)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Foto Mempelai Wanita (max 1)</h3>
+    <fieldset>
+      <legend>Foto Mempelai Wanita (max 1)</legend>
       <div class="upload-container" id="fotoWanita"></div>
       <input type="file" accept="image/*" onchange="handleUpload(this,'fotoWanita',1)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Foto Galeri (max 7)</h3>
+    <fieldset>
+      <legend>Foto Galeri (max 7)</legend>
       <div class="upload-container" id="fotoGaleri"></div>
       <input type="file" accept="image/*" multiple onchange="handleUpload(this,'fotoGaleri',7)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Cover (max 1)</h3>
+    <fieldset>
+      <legend>Cover (max 1)</legend>
       <div class="upload-container" id="cover"></div>
       <input type="file" accept="image/*" onchange="handleUpload(this,'cover',1)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Slideshow (max 2)</h3>
+    <fieldset>
+      <legend>Slideshow (max 2)</legend>
       <div class="upload-container" id="slideshow"></div>
       <input type="file" accept="image/*" multiple onchange="handleUpload(this,'slideshow',2)">
-    </div>
+    </fieldset>
 
-    <div class="form-section">
-      <h3>Lovestory (max 1)</h3>
+    <fieldset>
+      <legend>Lovestory (max 1)</legend>
       <div class="upload-container" id="lovestory"></div>
       <input type="file" accept="image/*" onchange="handleUpload(this,'lovestory',1)">
-    </div>
+    </fieldset>
 
     <button class="btn-next" onclick="goNext()">➡ Selanjutnya</button>
   </div>
