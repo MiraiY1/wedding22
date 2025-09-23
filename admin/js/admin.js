@@ -1,7 +1,19 @@
 // ===== 1. Konfigurasi Firebase Web =====
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  onSnapshot,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// TODO: ganti pake firebaseConfig project kamu
 const firebaseConfig = {
   apiKey: "AIzaSyCEqdh8gPO9Kq5Q36fAklOnfdTqdtW_i3o",
   authDomain: "weddingweb-8afc6.firebaseapp.com",
@@ -14,7 +26,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ===== 2. Fungsi generate token random =====
+// ===== 2. Auto Delete =====
+const AUTO_DELETE_MINUTES = 5;
+
+// ===== 3. Helper Fungsi =====
 function generateTokenId(length = 20) {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
@@ -24,7 +39,25 @@ function generateTokenId(length = 20) {
   return result;
 }
 
-// ===== 3. Fungsi untuk generate & simpan token =====
+function formatDuration(createdAt) {
+  if (!createdAt) return "-";
+  const createdMs = createdAt.toMillis ? createdAt.toMillis() : new Date(createdAt).getTime();
+  const diffMinutes = Math.floor((Date.now() - createdMs) / (1000 * 60));
+  const days = Math.floor(diffMinutes / (60 * 24));
+  const hours = Math.floor((diffMinutes % (60 * 24)) / 60);
+  const minutes = diffMinutes % 60;
+  return `${days}h ${hours}j ${minutes}m`;
+}
+
+function shouldDelete(createdAt) {
+  if (!createdAt) return false;
+  const createdMs = createdAt.toMillis ? createdAt.toMillis() : new Date(createdAt).getTime();
+  const ageMs = Date.now() - createdMs;
+  console.log("Umur token (detik):", Math.floor(ageMs / 1000));
+  return ageMs >= AUTO_DELETE_MINUTES * 60 * 1000;
+}
+
+// ===== 4. Generate Token =====
 async function createToken() {
   const customerName = document.getElementById("customerName").value.trim();
   if (!customerName) {
@@ -35,14 +68,12 @@ async function createToken() {
   const tokenId = generateTokenId();
   const inviteLink = `https://miraiy1.github.io/wedding22/tab1.html?token=${tokenId}`;
 
-  const docRef = doc(db, "tokens", tokenId);
-
-  await setDoc(docRef, {
+  await setDoc(doc(db, "tokens", tokenId), {
     status: "unused",
     createdAt: serverTimestamp(),
     assignedTo: customerName,
     currentTab: 1,
-    inviteLink: inviteLink,
+    inviteLink,
     tab1: {},
     tab2: {},
     tab3: {},
@@ -57,49 +88,58 @@ async function createToken() {
     }
   });
 
-  // pesan untuk customer
-  const customerMessage = `Halo ${customerName},\nSilakan lengkapi formulir undangan pernikahan pada link berikut:\n${inviteLink}`;
-
-  // tampilkan hasil
+  // tampilkan pesan
   const resultDiv = document.getElementById("result");
-  const copyBtn = document.getElementById("copyBtn");
-  const copyFullBtn = document.getElementById("copyFullBtn");
-
   resultDiv.style.display = "block";
-  copyBtn.style.display = "inline-block";
-  copyFullBtn.style.display = "inline-block";
-
   resultDiv.innerHTML = `
     <p><b>Token berhasil dibuat untuk:</b> ${customerName}</p>
     <p><b>Token ID:</b> ${tokenId}</p>
-    <hr>
-    <p><b>Teks untuk Customer:</b></p>
-    <pre style="white-space:pre-wrap">${customerMessage}</pre>
+    <p><b>Teks untuk customer:</b><br>
+    Silahkan lengkapi formulir dibawah ini:<br>
+    <a href="${inviteLink}" target="_blank">${inviteLink}</a></p>
   `;
 
-  // simpan ke dataset tombol copy
-  copyBtn.dataset.link = inviteLink;
-  copyFullBtn.dataset.message = customerMessage;
+  const copyBtn = document.getElementById("copyBtn");
+  copyBtn.style.display = "inline-block";
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(`Silahkan lengkapi formulir dibawah ini:\n${inviteLink}`);
+    alert("Pesan berhasil disalin!");
+  };
 }
 
-// ===== 4. Fungsi copy link =====
-document.getElementById("copyBtn").addEventListener("click", function () {
-  const link = this.dataset.link;
-  if (link) {
-    navigator.clipboard.writeText(link).then(() => {
-      alert("✅ Link berhasil dicopy!");
-    });
-  }
-});
-
-// ===== 5. Fungsi copy pesan lengkap =====
-document.getElementById("copyFullBtn").addEventListener("click", function () {
-  const message = this.dataset.message;
-  if (message) {
-    navigator.clipboard.writeText(message).then(() => {
-      alert("✅ Pesan lengkap berhasil dicopy!");
-    });
-  }
-});
-
 window.createToken = createToken;
+
+// ===== 5. Daftar Token (Realtime) =====
+const tableBody = document.getElementById("tokenTableBody");
+
+onSnapshot(collection(db, "tokens"), async (snapshot) => {
+  tableBody.innerHTML = "";
+  snapshot.forEach(async (docSnap) => {
+    const data = docSnap.data();
+
+    // auto hapus
+    if (shouldDelete(data.createdAt)) {
+      await deleteDoc(doc(db, "tokens", docSnap.id));
+      return;
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${data.assignedTo || "-"}</td>
+      <td>${data.status || "-"}</td>
+      <td>${data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : "-"}</td>
+      <td>${formatDuration(data.createdAt)}</td>
+      <td><button class="deleteBtn" data-id="${docSnap.id}">Hapus</button></td>
+    `;
+    tableBody.appendChild(tr);
+  });
+
+  document.querySelectorAll(".deleteBtn").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-id");
+      if (confirm("Yakin mau hapus token ini?")) {
+        await deleteDoc(doc(db, "tokens", id));
+      }
+    };
+  });
+});
