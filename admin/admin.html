@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Generate Token</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h2>Generate Token Undangan</h2>
+
+  <label for="customerName">Nama Customer:</label><br>
+  <input type="text" id="customerName" placeholder="Masukkan nama"><br>
+
+  <button onclick="createToken()">Generate Token</button>
+
+  <!-- Hasil token akan muncul di sini -->
+  <div id="result" class="result" style="display:none"></div>
+<button id="copyBtn" style="display:none">Copy Link</button>
+<button id="copyFullBtn" style="display:none">Copy Pesan Lengkap</button>
+
+
+  <!-- admin.js harus type="module" -->
+  <script type="module" src="./js/admin.js"></script>
+</body>
+</html>
