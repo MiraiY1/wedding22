@@ -1,40 +1,116 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Generate Token</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 30px;
+      margin: 5px;
+      background: #f5f6fa;
+      color: #2f3640;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .container {
+      max-width: 800px; /* konsisten utk card & tabel */
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
     }
     input, button {
-      padding: 8px;
-      margin: 5px 0;
+  width: 90%;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+    button {
+      background: #0984e3;
+      color: #fff;
+      cursor: pointer;
+      border: none;
     }
+    button:hover { background: #74b9ff; }
     .result {
       margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      background: #dfe6e9;
+      display: none;
     }
+    #copyBtn {
+      margin-top: 10px;
+      display: none;
+      background: #00b894;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background: #0984e3;
+      color: #fff;
+    }
+    tr:hover { background: #f1f2f6; }
+    .deleteBtn {
+      background: #d63031;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .deleteBtn:hover { background: #ff7675; }
   </style>
 </head>
 <body>
-  <h2>Generate Token Undangan</h2>
+  <div class="container">
+    <h2>Generate Token Undangan</h2>
 
-  <label for="customerName">Nama Customer:</label><br>
-  <input type="text" id="customerName" placeholder="Masukkan nama"><br>
+    <div class="card">
+      <label>Nama Customer:</label><br>
+      <input type="text" id="customerName" placeholder="Masukkan nama"><br>
+      <button onclick="createToken()">Generate Token</button>
 
-  <button onclick="createToken()">Generate Token</button>
+      <div id="result" class="result"></div>
+      <button id="copyBtn">Copy Pesan</button>
+    </div>
 
-  <!-- Hasil token akan muncul di sini -->
-  <div id="result" class="result" style="display:none"></div>
-<button id="copyBtn" style="display:none">Copy Link</button>
-<button id="copyFullBtn" style="display:none">Copy Pesan Lengkap</button>
+    <h2>Daftar Token</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Status</th>
+          <th>Dibuat</th>
+          <th>Durasi</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tokenTableBody"></tbody>
+    </table>
+  </div>
 
-
-  <!-- admin.js harus type="module" -->
   <script type="module" src="./js/admin.js"></script>
 </body>
 </html>
